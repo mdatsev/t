@@ -15,6 +15,11 @@ const writeFile = util.promisify(fs.writeFile)
     }
 })()
 
+let known_hosts = {
+    'Blogs'  : ['github.com'],
+    'Meetups': ['twitter.com']
+}
+
 async function print_classify(req) {
     console.log(req)
     console.log(await classify(req))
@@ -31,11 +36,19 @@ async function classify(req) {
     const redirects = await get_link_redirects(tweet.text)
     const uris = redirects.map(v => v.request.uri)
     const hosts = uris.map(u => u.host)
-    console.log(hosts)
-    return 'BLOG'
+    //console.log(hosts)
+    return by_domain(hosts)
+    
 }
 
-function by_domain(_) {
+function by_domain(hosts) {
+    for(i in hosts){
+        for (const [key, value] of Object.entries(known_hosts)) {
+            if(value.indexOf(hosts[i]) > - 1){
+                return key;
+            }
+         }
+    }
     return null
 }
 
