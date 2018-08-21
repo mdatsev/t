@@ -20,6 +20,14 @@ let known_hosts = {
     'Meetups': ['twitter.com']
 }
 
+let keywords = {
+    'Blogs'        : ['blog', 'blogs', 'articles', 'write'],
+    'Integration'  : ['use openfaas', 'via openfaas', ['openfaas', 'use case']],
+    'New features' : ['working', 'improving'],
+    'New functions': ['working functions', 'create functions'],
+    'New templates': ['working templated', 'create templates', 'imrpoving templates']   
+}
+
 async function print_classify(req) {
     console.log(req)
     console.log(await classify(req))
@@ -37,7 +45,7 @@ async function classify(req) {
     const uris = redirects.map(v => v.request.uri)
     const hosts = uris.map(u => u.host)
     //console.log(hosts)
-    return by_domain(hosts)
+    return by_domain(hosts)   
     
 }
 
@@ -47,13 +55,21 @@ function by_domain(hosts) {
             if(value.indexOf(hosts[i]) > - 1){
                 return key;
             }
-         }
+        }
     }
     return null
 }
 
-function by_url(_) {
-    return null
+function by_url(uris) {
+    for(i in uris){
+        for (const [key, value] of Object.entries(keywords)) {
+            value.map((v) => {
+                if(v.constructor === Array) 
+                uris.includes(v)
+            })    
+        }
+    }
+    return null 
 }
 
 function by_og(_) {
