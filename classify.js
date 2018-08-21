@@ -16,16 +16,16 @@ const writeFile = util.promisify(fs.writeFile)
 })()
 
 let known_hosts = {
-    'Blogs'  : ['github.com'],
-    'Meetups': ['twitter.com']
+    'Blogs'  : ['medium.com'],
+    'Meetups': ['meetup.com']
 }
 
 let keywords = {
-    'Blogs'        : ['blog', 'blogs', 'articles', 'write'],
-    'Integration'  : ['use openfaas', 'via openfaas', ['openfaas', 'use case']],
-    'New features' : ['working', 'improving'],
-    'New functions': ['working functions', 'create functions'],
-    'New templates': ['working templated', 'create templates', 'imrpoving templates']   
+    'Blogs'        : ['blog', 'article', 'wrote'],
+    'Integration'  : [['use', 'openfaas'], ['using', 'openfaas'], 'via openfaas', ['openfaas', 'use case']],
+    'New features' : ['work', 'improv', 'feature'],
+    'New functions': [['work', 'functions'], ['creat','functions']],
+    'New templates': [['work', 'template'], ['creat','templates'], ['improv', 'templates']]
 }
 
 async function print_classify(req) {
@@ -42,40 +42,38 @@ async function get_link_redirects(text) {
 async function classify(req) {
     const tweet = JSON.parse(req)
     const redirects = await get_link_redirects(tweet.text)
-    const uris = redirects.map(v => v.request.uri)
+    const uris = redirects.filter(e => e).map(v => v.request.uri)
     const hosts = uris.map(u => u.host)
-    //console.log(hosts)
-    return by_domain(hosts)   
+    const hrefs = uris.map(u => u.href)
+    return [by_domain(hosts), by_keywords([tweet.text, ...hrefs])].reduce((a, e) => ([...Object.keys(a), ...Object.keys(e)].reduce((a, e) => ({...a, [e]: a[e] + 1 || 1}), {})), {})
     
 }
 
 function by_domain(hosts) {
-    for(i in hosts){
+    const confidence = {}
+    for(const host of hosts){
         for (const [key, value] of Object.entries(known_hosts)) {
-            if(value.indexOf(hosts[i]) > - 1){
-                return key;
+            if(value.indexOf(host) > - 1){
+                confidence[key] = confidence[key] + 1 || 1
             }
         }
     }
-    return null
+    return confidence
 }
 
-function by_url(uris) {
-    for(i in uris){
+function by_keywords(texts) {
+    const confidence = {}
+    for(const text of texts){
+        const text_lower = text.toLowerCase()
         for (const [key, value] of Object.entries(keywords)) {
-            value.map((v) => {
-                if(v.constructor === Array) 
-                uris.includes(v)
-            })    
+            if(value.some(kws => Array.isArray(kws) ? kws.every(kw => text_lower.includes(kw)) : text_lower.includes(kws))) {
+                confidence[key] = confidence[key] + 1 || 1
+            }
         }
     }
-    return null 
+    return confidence
 }
 
 function by_og(_) {
-    return null
-}
-
-function by_keywords(_) {
     return null
 }
